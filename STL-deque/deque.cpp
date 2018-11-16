@@ -54,7 +54,7 @@ bool isEqual(Ans &ans, Test &test) {
 
             if (ans[i] != test[i])
             {
-                //std::cout<<"i [] "<<i<<"\n";
+                std::cout<<"i [] "<<i<<"\n";
                 return false;
             }
 
@@ -62,7 +62,7 @@ bool isEqual(Ans &ans, Test &test) {
 
             if (ans.at(i) != test.at(i))
             {
-                //std::cout<<"i at "<<i<<"\n";
+                std::cout<<"i at "<<i<<"\n";
                 return false;
             }
 
@@ -73,11 +73,13 @@ bool isEqual(Ans &ans, Test &test) {
 
 
 
-    if (ans.empty() != test.empty() || 
+	if (ans.empty() != test.empty() ||
 		ans.front() != test.front() ||
 
-        ans.back() != test.back())
+		ans.back() != test.back())
 
+		//std::cout << *(test.front()) << ' ' << *(ans.front()) << std::endl;
+		//std::cout << *(test.back()) << ' ' << *(ans.back()) << std::endl;
         return false;
 
     //std::cout<<"empty front back same\n\n";
@@ -204,13 +206,14 @@ bool insertTest() {
         int pos = (ans.size() == 0 ? 0 : randnum() % ans.size());
         //std::cout<<"\n\ni "<<i<<" pos "<<pos<<" x "<<x<<"\n";
 
-
+		auto myIter = deq.begin();
+		auto truthIter = ans.begin();
         switch (randnum() % 2) {
 
             case 0: //std::cout<<"begin\n";
-                    deq.insert(deq.begin() + pos, x);
+				myIter = deq.insert(deq.begin() + pos, x);
                     //std::cout<<"done\n";
-                    ans.insert(ans.begin() + pos, x);
+				truthIter = ans.insert(ans.begin() + pos, x);
 
                     //std::cout<<"aft pos "<<pos<<"\n";
                     //if(deq[pos]!=ans[pos]) std::cout<<"diff pos "<<pos<<"\n";
@@ -218,9 +221,9 @@ bool insertTest() {
                     break;
 
             case 1: //std::cout<<"end\n";
-                    deq.insert(deq.end() - pos, x);
+				myIter = deq.insert(deq.end() - pos, x);
 
-                    ans.insert(ans.end() - pos, x);
+				truthIter = ans.insert(ans.end() - pos, x);
 
 
                     //std::cout<<"aft pos "<<pos<<"\n";
@@ -229,6 +232,7 @@ bool insertTest() {
                     break;
 
         }
+		/*std::cout << myIter - deq.begin() << ' ' << truthIter - ans.begin() << std::endl;*/
 
     }
 
@@ -326,8 +330,9 @@ bool iteratorTest() {
 
 
 
-        if (ansIter[1] - ansIter[0] != myIter[1] - myIter[0])
+		if (ansIter[1] - ansIter[0] != myIter[1] - myIter[0])
 
+			std::cout << ansIter[1] - ansIter[0] << ' ' << myIter[1] - myIter[0] << std::endl;
             return false;
 
     }
