@@ -29,9 +29,8 @@ public:
         T* val;
         Node* next;
         Node* pre;
-        Node():next(NULL),pre(NULL){}
-        Node(T* v,Node* p=NULL,Node* n=NULL):val(v),next(n),pre(p){}
-		~Node() { if (val != NULL) delete val; val = NULL; }
+        Node(T* v=NULL,Node* p=NULL,Node* n=NULL):val(v),next(n),pre(p){}
+        ~Node(){delete val;};
     };
 
     struct Block
@@ -93,6 +92,7 @@ public:
 		}
 
 		iterator operator-(const int &n) const {
+		    if (posi-n<0) throw invalid_iterator();
             iterator temp=*this;
             temp+=(-n);
             return temp;
@@ -113,11 +113,11 @@ public:
 		}
 
 		iterator operator+=(const int &n) {
-            //std::cout<<"+n "<<n<<" pos "<<posi<<" total "<<container->total<<"\n";
+		    //std::cout<<"pos "<<posi<<" n "<<n<<" total "<<container->total<<"\n";
             int copyN=n,total=container->total;
             posi+=n;
             if ((posi>container->total or posi<0)and !(container->total==0 and posi==0))
-                throw;
+                throw invalid_iterator();
 
             if (posi==container->total)
             {
@@ -186,6 +186,7 @@ public:
 		}
 
 		iterator operator-=(const int &n) {
+		    if (posi-n<0) throw invalid_iterator();
             *this+=(-n);
             return *this;
 			//TODO
@@ -219,7 +220,7 @@ public:
                 cur=blo->first;
             }
             else
-                throw;
+                throw invalid_iterator();
             posi++;
             return *this;
 		}
@@ -252,7 +253,7 @@ public:
                 while(cur->next)
                     cur=cur->next;
             }
-            else throw;
+            else throw invalid_iterator();
             posi--;
             return *this;
 		}
@@ -263,7 +264,14 @@ public:
 
 		 */
 
-		T& operator*() const {return *(cur->val);}
+		T& operator*() const
+		{
+		    if (posi==container->total)
+            {
+		    throw invalid_iterator();
+		    }
+		    return *(cur->val);
+        }
 
 		/**
 
@@ -351,6 +359,7 @@ public:
 		}
 
 		const_iterator operator-(const int &n) const {
+		    if (posi-n<0) throw invalid_iterator();
             const_iterator temp=*this;
             temp+=(-n);
             return temp;
@@ -372,11 +381,10 @@ public:
 		}
 
 		const_iterator operator+=(const int &n) {
-            //std::cout<<"+n "<<n<<" pos "<<posi<<" total "<<container->total<<"\n";
             int copyN=n;
             posi+=n;
             if ((posi>container->total or posi<0)and !(container->total==0 and posi==0))
-                throw;
+                throw invalid_iterator();
             if (posi==container->total)
             {
                 *this=container->finish;
@@ -445,6 +453,7 @@ public:
 		}
 
 		const_iterator operator-=(const int &n) {
+		    if (posi-n<0) throw invalid_iterator();
             *this+=(-n);
             return *this;
 			//TODO
@@ -477,7 +486,7 @@ public:
                 blo=blo->next;
                 cur=blo->first;
             }
-            else throw;
+            else throw invalid_iterator();
             posi++;
             return *this;
 		}
@@ -510,7 +519,7 @@ public:
                 while(cur->next)
                     cur=cur->next;
             }
-            else throw;
+            else throw invalid_iterator();
             posi--;
             return *this;
 		}
@@ -521,7 +530,12 @@ public:
 
 		 */
 
-		T& operator*() const {return *(cur->val);}
+		T& operator*() const
+		{
+		    if (posi==container->total)
+                throw invalid_iterator();
+		    return *(cur->val);
+        }
 
 		/**
 
@@ -558,7 +572,7 @@ public:
     int total;
     iterator start;
     iterator finish;
-    //iterator cur;
+    iterator current;
 
 	/**
 
@@ -570,11 +584,12 @@ public:
 	deque()
 	{
 	    total=0;
+	    Node* endOne=new Node();
 	    finish.container=this;
-	    finish.cur=NULL;
-		finish.blo = NULL;
-	    finish.posi=0;
+	    finish.cur=endOne;
+	    finish.posi=total;
 	    start=finish;
+	    current=finish;
     }
 
 	deque(const deque &other):total(other.total)
@@ -582,10 +597,10 @@ public:
 	    if (other.empty())
         {
             total=0;
-			finish.container = this;
-			finish.cur = NULL;
-			finish.blo = NULL;
-			finish.posi = 0;
+            Node* endOne=new Node();
+            finish.container=this;
+            finish.cur=endOne;
+            finish.posi=total;
             start=finish;
         }
         else
@@ -603,7 +618,7 @@ public:
                 {
                     preBlock->next=curBlock;
                 }
-                else if (preBlock==NULL)
+                else
                 {
                     start.blo=curBlock;
                     start.container=this;
@@ -625,12 +640,18 @@ public:
                 preBlock=curBlock;
             }
 
+
+
             finish.blo=preBlock;
+            preBlock->next=NULL;
             finish.container=this;
             finish.posi=total;
             temp=new Node(NULL,preNode,NULL);
             preNode->next=temp;
             finish.cur=temp;
+            current=start;
+
+
         }
 
 	}
@@ -645,6 +666,9 @@ public:
 	~deque()
 	{
         clear();
+        if (finish.cur)
+            delete finish.cur;
+        finish.cur=NULL;
 	}
 
 	/**
@@ -660,12 +684,10 @@ public:
         clear();
         if (other.empty())
         {
-			total = 0;
-			finish.container = this;
-			finish.cur = NULL;
-			finish.blo = NULL;
-			finish.posi = 0;
-			start = finish;
+            total=0;
+            finish.blo=NULL;
+            finish.posi=0;
+            start=finish;
             return *this;
         }
 	    total=other.total;
@@ -680,7 +702,7 @@ public:
             curBlock=new Block(tempNew,preBlock,NULL,otherBlock->block_len);
             if (preBlock!=NULL)
                 preBlock->next=curBlock;
-            if (preBlock==NULL)
+            else
             {
                 start.blo=curBlock;
                 start.container=this;
@@ -703,11 +725,10 @@ public:
         }
 
         finish.blo=preBlock;
-        finish.container=this;
         finish.posi=total;
-        temp=new Node(NULL,preNode,NULL);
-        preNode->next=temp;
-        finish.cur=temp;
+        preNode->next=finish.cur;
+        finish.cur->pre=preNode;
+        current=start;
         return *this;
 	}
 
@@ -721,37 +742,41 @@ public:
 
 	T & at(const int &pos)
 	{
-		if (empty()) throw container_is_empty();
 	    if (pos>total-1 or pos<0)
             throw index_out_of_bound();
-        return *(start+pos);
+        int dis=current.posi-pos;
+        current-=dis;
+        return *current;
     }
 
 	const T & at(const int &pos) const
 	{
-		if (empty()) throw container_is_empty();
 	    if (pos>total-1 or pos<0)
             throw index_out_of_bound();
+        //int dis=pos-current.posi;
+        //current+=dis;
         return *(start+pos);
     }
 
 	T & operator[](const int &pos)
 	{
-		if (empty()) throw container_is_empty();
 	    if (pos>total-1 or pos<0)
         {
             throw index_out_of_bound();
         }
-        return *(start+pos);
+        int dis=pos-current.posi;
+        current+=dis;
+        return *current;
     }
 
 	const T & operator[](const int &pos) const
 	{
-		if (empty()) throw container_is_empty();
 	    if (pos>total-1 or pos<0)
         {
             throw index_out_of_bound();
         }
+        //int dis=pos-current.posi;
+        //current+=dis;
         return *(start+pos);
     }
 
@@ -834,25 +859,24 @@ public:
 	    total=0;
         Block *tempBlock=start.blo,*oldBlock;
         Node *tempNode,*oldNode;
-		int pos = 0;
         while (tempBlock)
         {
             tempNode=tempBlock->first;
-			while (tempNode && pos < total)
+            oldNode=tempNode;
+            while(oldNode!=NULL and oldNode->val!=NULL)
             {
-                oldNode=tempNode;
                 tempNode=tempNode->next;
                 delete oldNode;
-				++pos;
+                oldNode=tempNode;
             }
             oldBlock=tempBlock;
             tempBlock=tempBlock->next;
             delete oldBlock;
         }
-		finish.blo = NULL;
-		finish.cur = NULL;
-		finish.posi = 0;
-		start = finish;
+
+        start=finish;
+        finish.posi=total;
+        current=start;
 	}
 
 	/**
@@ -869,7 +893,7 @@ public:
 
 	iterator insert(iterator pos, const T value)
 	{
-		if(pos.container!=this) throw invalid_iterator();
+
         if (pos==start)
         {
             push_front(value);
@@ -881,7 +905,7 @@ public:
             return (finish-1);
         }
 	    if (pos.posi<0 or pos.posi>total-1 or pos.container!=this)
-            throw;
+            throw invalid_iterator();
 
 
         total++;
@@ -901,6 +925,7 @@ public:
 
 
         resize(pos.blo,pos);
+        current=start;
 
         return pos;
 	}
@@ -919,8 +944,9 @@ public:
 
 	iterator erase(iterator pos)
 	{
+
         if (pos.posi<0 or pos.posi>total-1 or pos.container!=this or total==0)
-            throw;
+            throw invalid_iterator();
 
         if (pos==start)
         {
@@ -967,8 +993,8 @@ public:
             pos.cur->pre=oldNode->pre;
         }
         delete oldNode;
-        oldNode=NULL;
         resize(oldBlock,pos);
+        current=start;
         return pos;
 	}
 
@@ -1006,7 +1032,7 @@ public:
 	void pop_back()
 	{
 	    if (total==0)
-            throw;
+            throw container_is_empty();
         total--;
         if (total==0)
         {
@@ -1028,7 +1054,6 @@ public:
 
             delete tempBlock->first;
             delete tempBlock;
-            tempBlock=NULL;
         }
         else
         {
@@ -1036,7 +1061,6 @@ public:
             temp->pre->next=finish.cur;
             finish.blo->block_len--;
             delete temp;
-            temp=NULL;
         }
         finish.posi=total;
         resize(finish.blo,start);
@@ -1063,8 +1087,9 @@ public:
         start.cur=temp;
         start.blo->first=temp;
         start.blo->block_len++;
-        finish.posi==total;
+        finish.posi=total;
         resize(start.blo,start);
+        current=start;
 	}
 
 
@@ -1080,7 +1105,7 @@ public:
 	void pop_front()
 	{
         if(total==0)
-            throw;
+            throw container_is_empty();
         total--;
         if (total==0)
         {
@@ -1098,7 +1123,6 @@ public:
             start.blo->pre=NULL;
             delete tempBlock->first;
             delete tempBlock;
-            tempBlock=NULL;
         }
         else
         {
@@ -1108,10 +1132,10 @@ public:
             temp=temp->pre;
             start.cur->pre=NULL;
             delete temp;
-            temp=NULL;
         }
         finish.posi==total;
         resize(start.blo,start);
+        current=start;
 	}
 
 
@@ -1125,9 +1149,9 @@ public:
         start.container=this;
         start.cur=newNode;
         start.posi=0;
+        current=start;
 
         finish.blo=NewBlock;
-		finish.cur = new Node;
         finish.cur->pre=newNode;
         finish.posi=total;
 	}
@@ -1135,27 +1159,16 @@ public:
 	void destory()
 	{
 	    total=0;
-	    finish.cur=NULL;
+	    finish.cur->pre=NULL;
 	    finish.blo=NULL;
 	    finish.posi=0;
 	    delete start.cur;
 	    delete start.blo;
 	    start=finish;
+	    current=start;
 	}
 
-	/*int calculOrder(iterator& var)
-	{
-	    int order=1;
-	    Node* temp=var.blo->first;
-	    while(temp!=var.cur and temp!=NULL)
-        {
-            temp=temp->next;
-            order++;
-        }
-        if (temp=NULL)
-            return -1;
-        return order;
-	}*/
+
 
 	void resize(Block* blo1,iterator& iterIn)
 	{
